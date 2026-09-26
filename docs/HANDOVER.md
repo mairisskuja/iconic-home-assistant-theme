@@ -13,9 +13,10 @@ Development was AI-accelerated with Claude Code: source research against the HA 
 | Item | Status |
 |---|---|
 | Theme file | Done; `themes/iconic_theme.yaml` |
-| Contrast gate | 30/30 WCAG AA checks pass (`scripts/contrast_check.py`) |
-| Deployed to the reference HA instance | Yes; loaded in dark-only mode with 50 colour variables (verified with `scripts/verify_theme.py`) |
-| Visual check in a browser | **Not done yet** (see open items) |
+| Contrast gate | 69/69 WCAG AA checks pass (`scripts/contrast_check.py`) |
+| Deployed to the reference HA instance | Yes; loaded in dark-only mode with 71 colour variables (verified with `scripts/verify_theme.py`) |
+| Font bridge | `www/iconic-fonts.js` deployed and loaded through `extra_module_url` |
+| Visual check in a browser | Done 2026-09-26 in Chrome on macOS: automation editor (dialog, fields, open dropdown), overview, lights, profile, template editor, history chart, devices, automation list. Zero contrast failures and zero Roboto text in a script-based scan of the rendered DOM, including shadow roots. |
 | HACS | `hacs.json` present; installable as a custom repository, not submitted to HACS default |
 
 Reference environment: Home Assistant OS, Core **2026.9.3**, frontend **20260826.7**.
@@ -29,6 +30,8 @@ These are the non-obvious facts, verified in the HA frontend source (`src/state/
 3. **Custom themes do not get a generated primary palette.** HA only derives the `ha-color-primary-05…95` ramp from `primary-color` for its *default* theme. Switches, filled buttons, links and focus rings read that ramp, so the theme must define all eleven steps itself.
 4. **Dead variables.** `switch-checked-color`, `switch-unchecked-*` and `paper-slider-*` are no longer read by any component in 2026.9, so they were removed. Sliders use `ha-slider-thumb-color`, `ha-slider-indicator-color` and `ha-slider-track-color`.
 5. **Filled (loud) buttons** use `ha-color-fill-primary-loud-*` with text in `ha-color-on-primary-loud`. HA's default is white text on primary-40; the theme uses gold primary-70 with dark text, which passes both text and boundary contrast.
+6. **Hardcoded Roboto.** A few places ignore every theme variable: the `<body>` style in `index.html` (so the sidebar inherits Roboto), ECharts' canvas `textStyle`, CodeMirror's `.cm-textfield` and `.cm-completionDetail`, CodeMirror's generic `monospace`, and `ha-input-chip`. `www/iconic-fonts.js` bridges them to `--ha-font-family-body` and `--ha-font-family-code`. It works by adopting a stylesheet into the document and every shadow root, wrapping the `ShadowRoot.adoptedStyleSheets` setter because Lit replaces the array, and wrapping each chart's `setOption`. It depends on frontend internals, so re-check it after each HA frontend upgrade (see section 5).
+7. **Code editor colours.** HA's dark `codemirror-*` defaults were designed for `#1c1c1c`. On the warmer `#2c292a` card, and on the active line (10% secondary text over the card), comments, variables, numbers and tags failed. All 18 tokens are now defined in the theme.
 
 ## 4. Design decisions
 
@@ -54,6 +57,15 @@ HA_HOST=root@homeassistant.local ./scripts/deploy.sh
 
 When adding a colour pair the UI actually renders, add a line to `checks` in `scripts/contrast_check.py`.
 
+**After every HA frontend upgrade**, open a few pages and check in the browser console that nothing renders in Roboto and that charts are patched:
+
+```js
+// every text node's font family, across shadow roots
+const f={};(function w(r){for(const e of r.querySelectorAll('*')){if(e.shadowRoot)w(e.shadowRoot)}
+ const t=document.createTreeWalker(r,4);let n;while(n=t.nextNode()){const p=n.parentNode;
+ if(p?.nodeType===1&&n.textContent.trim()){const k=getComputedStyle(p).fontFamily.split(',')[0];f[k]=(f[k]||0)+1}}})(document);f
+```
+
 ### SSH access to Home Assistant
 
 `deploy.sh` needs the **Terminal & SSH** (or *Advanced SSH & Web Terminal*) add-on:
@@ -66,17 +78,22 @@ Backups made by `deploy.sh` are stored on the host in `/config/backups_manual/ic
 
 ## 6. Open items and next steps
 
-1. **Visual QA in a browser.** The contrast figures are calculated from the theme values, but no one has screenshotted the rendered UI yet. Check form fields, dropdown menus, dialogs, the sidebar, toggles, sliders, the code editor and the history and energy charts on desktop and on the wall tablet. An automated axe-core scan of a few pages would make a good follow-up.
-2. **Unthemed neutral surfaces.** Menus and dialogs use HA's dark neutral ramp (`ha-color-neutral-*`, cool grey `#202020`), while cards are warm `#2c292a`. This is accessible but slightly off-brand; defining a warm neutral ramp would unify it.
-3. **Font on non-Apple devices.** Android wall tablets render Roboto. Consider self-hosting Inter as a fallback (instructions in the README).
-4. **Upstream `luxury_dashboard` has the same accessibility bugs.** It could be fixed the same way and offered upstream as a PR.
-5. **HACS default listing.** Submitting it needs a tagged GitHub release and screenshots in the README.
-6. **Version floor.** Only tested on 2026.9.3. Establish the minimum supported HA version and add `"homeassistant"` to `hacs.json`.
+1. **Remaining visual QA.** Desktop Chrome is verified. Still to check:
+   - a switch in the *on* state and a slider inside a more-info dialog (every light was unavailable during testing, and toggling a profile switch would have changed account settings);
+   - Safari on iOS or iPadOS;
+   - the wall tablet;
+   - the energy dashboard.
+2. **Unthemed neutral surfaces.** Menus, dialogs and the off-state switch (track `#202020`, border `#7a7a7a`, thumb `#989898`) use HA's cool `ha-color-neutral-*` ramp, while cards are warm `#2c292a`. This is accessible (off-switch border 3.36:1, thumb 5.65:1) but slightly off-brand; a warm neutral ramp would unify it.
+3. **Multi-select checkmarks are white, not gold.** `ha-form-multi_select` draws the checkbox as an icon in the primary text colour. It's readable but not themeable without the font bridge's approach.
+4. **Font on non-Apple devices.** Android wall tablets render Roboto. Consider self-hosting Inter as a fallback (instructions in the README).
+5. **Upstream `luxury_dashboard` has the same accessibility bugs.** It could be fixed the same way and offered upstream as a PR.
+6. **HACS default listing.** Submitting it needs a tagged GitHub release and screenshots in the README.
+7. **Version floor.** Only tested on 2026.9.3. Establish the minimum supported HA version and add `"homeassistant"` to `hacs.json`.
 
 ## 7. Reference instance notes
 
 These are unrelated to this repo, but they exist on the instance where the theme was developed. Don't be surprised by them:
 
 - The upstream `luxury_dashboard` theme is also installed, together with its assets in `/config/www/assets/`.
-- `configuration.yaml` has `frontend: extra_module_url: /local/assets/css/load-fonts.js`, a Poppins loader for `luxury_dashboard`. Iconic Theme doesn't need it, and it can be removed if `luxury_dashboard` is uninstalled (Core restart required).
+- `configuration.yaml` loads two modules through `frontend: extra_module_url:`. `/local/iconic-theme/iconic-fonts.js` is this repo's font bridge. `/local/assets/css/load-fonts.js` is a Poppins loader for `luxury_dashboard`; Iconic Theme doesn't need it, and it can be removed if `luxury_dashboard` is uninstalled (Core restart required).
 - Pre-change backups are in `/config/backups_manual/`.

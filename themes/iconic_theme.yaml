@@ -24,6 +24,15 @@ iconic_theme:
   paper-font-headline_-_font-family: *sf-pro-display
   paper-font-caption_-_font-family: *sf-pro
   paper-font-title_-_font-family: *sf-pro-display
+  # Material (mdc/md3) and Web Awesome components default to Roboto
+  mdc-typography-font-family: *sf-pro
+  md-ref-typeface-plain: *sf-pro
+  md-ref-typeface-brand: *sf-pro-display
+  wa-font-family-body: *sf-pro
+  wa-font-family-heading: *sf-pro-display
+  wa-font-family-longform: *sf-pro
+  wa-font-family-code: *sf-mono
+  # Places HA hardcodes Roboto are covered by www/iconic-fonts.js
 
   # Cards
   ha-card-border-radius: "16px"
@@ -109,3 +118,28 @@ iconic_theme:
       input-ink-color: "#ffffff"
       input-label-ink-color: "#c2bbb3"
       input-dropdown-icon-color: "#c2bbb3"
+      # Pickers and dropdown fields (HA default is cool grey #363636)
+      ha-color-form-background: "#363233"
+      ha-color-form-background-hover: "#403b3c"
+      ha-color-form-background-disabled: "#363233"
+
+      # Code editor syntax. HA's dark defaults assume #1c1c1c; these clear
+      # 4.5:1 on the card (#2c292a) and on the highlighted active line.
+      codemirror-comment: "#aca59e"
+      codemirror-variable: "#f58a90"
+      codemirror-string-2: "#f58a90"
+      codemirror-number: "#ff8a9c"
+      codemirror-tag: "#ff8a9c"
+      codemirror-keyword: "#c792ea"
+      codemirror-operator: "#89ddff"
+      codemirror-variable-2: "#eeffff"
+      codemirror-variable-3: "#decb6b"
+      codemirror-builtin: "#ffcb6b"
+      codemirror-atom: "#f78c6c"
+      codemirror-def: "#82aaff"
+      codemirror-string: "#c3e88d"
+      codemirror-meta: "#ffcb6b"
+      codemirror-attribute: "#c792ea"
+      codemirror-property: "#c792ea"
+      codemirror-qualifier: "#decb6b"
+      codemirror-type: "#decb6b"

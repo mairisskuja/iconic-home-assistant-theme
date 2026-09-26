@@ -62,6 +62,9 @@ def main():
         ("Secondary text on page", c["secondary-text-color"], c["primary-background-color"], TEXT),
         ("Secondary text on card", c["secondary-text-color"], card, TEXT),
         ("Input label on input", c["input-label-ink-color"], c["input-fill-color"], TEXT),
+        ("Picker label on form background", c["secondary-text-color"], c["ha-color-form-background"], TEXT),
+        ("Picker label on form background (hover)", c["secondary-text-color"], c["ha-color-form-background-hover"], TEXT),
+        ("Picker value on form background (hover)", c["primary-text-color"], c["ha-color-form-background-hover"], TEXT),
         ("Dropdown icon on input", c["input-dropdown-icon-color"], c["input-fill-color"], UI),
         ("Primary (gold) text on card", c["primary-color"], card, TEXT),
         ("Text on primary fill", c["text-primary-color"], c["primary-color"], TEXT),
@@ -87,6 +90,15 @@ def main():
         ("Header text", c["app-header-text-color"], c["app-header-background-color"], TEXT),
         ("Disabled text (exempt, informational)", disabled, card, 0),
     ]
+
+    # Code editor: every syntax colour on the editor and on the active line,
+    # which HA paints as secondary-text-color at 10% over the card.
+    sec = rgb(c["secondary-text-color"])
+    active_line = blend(f"rgba({sec[0]},{sec[1]},{sec[2]},0.1)", card)
+    for key in sorted(k for k in c if k.startswith("codemirror-")):
+        token = key.removeprefix("codemirror-")
+        checks.append((f"Code {token} on editor", c[key], card, TEXT))
+        checks.append((f"Code {token} on active line", c[key], active_line, TEXT))
 
     failures = 0
     for name, fg, bg, minimum in checks:

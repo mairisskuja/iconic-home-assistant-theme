@@ -24,8 +24,16 @@ echo "==> Backing up current theme on $HA_HOST"
   [ ! -f /config/themes/iconic_theme.yaml ] || \
   cp /config/themes/iconic_theme.yaml /config/backups_manual/iconic_theme.yaml.$(date +%Y%m%d-%H%M%S)'
 
-echo "==> Copying theme"
+echo "==> Copying theme and font bridge"
 scp -q -P "$HA_PORT" "$ROOT/themes/iconic_theme.yaml" "$HA_HOST:/config/themes/iconic_theme.yaml"
+"${SSH[@]}" 'mkdir -p /config/www/iconic-theme'
+scp -q -P "$HA_PORT" "$ROOT/www/iconic-fonts.js" "$HA_HOST:/config/www/iconic-theme/iconic-fonts.js"
+"${SSH[@]}" 'grep -q "/local/iconic-theme/iconic-fonts.js" /config/configuration.yaml' || {
+  echo "WARNING: configuration.yaml does not load the font bridge. Add under frontend:" >&2
+  echo "  extra_module_url:" >&2
+  echo "    - /local/iconic-theme/iconic-fonts.js" >&2
+  echo "then restart Home Assistant Core." >&2
+}
 
 echo "==> Checking configuration and reloading themes"
 "${SSH[@]}" 'ha core check >/dev/null && \

@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.1.0 (2026-09-26)
+
+Verified in a live browser against Home Assistant 2026.9.3. Pages checked: automation editor (dialog, form fields, open dropdown), overview dashboard, lights, profile, template editor, history chart, devices table and automation list. The scan now reports zero contrast failures and zero Roboto text on those pages.
+
+### Typography
+- SF is now used everywhere. Before this release, 20 of 69 text elements on the profile page, including the whole sidebar and the picker labels, still rendered in Roboto.
+- Added `mdc-typography-font-family`, `md-ref-typeface-plain/brand` and `wa-font-family-body/heading/longform/code` to the theme.
+- New `www/iconic-fonts.js` font bridge (`frontend.extra_module_url`), which points HA's hardcoded Roboto at the theme's font variables:
+  - the base page font in `index.html` (sidebar);
+  - ECharts canvas labels (history and energy charts);
+  - code editor text (was generic `monospace`, now SF Mono);
+  - code editor search field and autocomplete details;
+  - input chips.
+
+### Accessibility
+| Issue found in browser | Fix | Result |
+|---|---|---|
+| Code comments `#545454` (HA default) | `#aca59e` | 1.53:1 → 4.77:1 on the active line |
+| Code variables and string-2 `#f07178` | `#f58a90` | 4.06:1 → 4.93:1 on the active line |
+| Code numbers and tags `#ff5370` | `#ff8a9c` | 3.72:1 → 5.18:1 on the active line |
+| Dropdown and picker fields used HA's cool grey `#363636` | `ha-color-form-background*` in warm `#363233` / `#403b3c` | Label 6.65:1, hover 5.79:1 |
+
+### Tooling
+- `contrast_check.py` covers every `codemirror-*` token on the editor and on the active line, plus picker fields: 69 checks.
+- `deploy.sh` installs the font bridge and warns if `configuration.yaml` doesn't load it.
+
 ## 1.0.0 (2026-09-26)
 
 First release of Iconic Theme, forked from `luxury_dashboard` in [ruudmens/home-assistant-dashboard](https://github.com/ruudmens/home-assistant-dashboard). Developed in an AI-accelerated style with Claude Code.

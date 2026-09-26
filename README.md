@@ -9,8 +9,8 @@ A dark, gold-accented Home Assistant theme set in Apple's SF font family, rebuil
 
 ## Highlights
 
-- **Apple SF typography**: SF Pro Text for body text, SF Pro Display for headings and SF Mono for code, via the system font stack. Nothing is downloaded.
-- **Accessible by default**: every text and UI colour pair meets WCAG 2.2 AA, enforced by a contrast checker that runs before each deploy (30 checks).
+- **Apple SF typography everywhere**: SF Pro Text for body text, SF Pro Display for headings and SF Mono for code, via the system font stack. Nothing is downloaded. A small companion module (`www/iconic-fonts.js`) also covers the places where Home Assistant hardcodes Roboto: the sidebar and page base font, chart labels, code editor and input chips.
+- **Accessible by default**: every text and UI colour pair meets WCAG 2.2 AA, enforced by a contrast checker that runs before each deploy (69 checks, including every code-editor syntax colour), and verified in a live browser scan of the rendered UI.
 - **A proper dark theme**: all colours sit under `modes: dark:`, so Home Assistant's own dark base styles every form, dropdown, menu and dialog. No more white-on-white labels.
 - **Gold everywhere**: a full `ha-color-primary-*` ramp, so switches, buttons, links and focus rings follow the theme instead of falling back to Home Assistant blue.
 - **Clear state colours**: off is warm grey, on is gold, so state never depends on icon position alone.
@@ -40,6 +40,7 @@ A dark, gold-accented Home Assistant theme set in Apple's SF font family, rebuil
 1. In HACS, go to **⋮ → Custom repositories**, add `https://github.com/mairisskuja/iconic-home-assistant-theme` and choose the **Theme** type.
 2. Install **Iconic Theme**.
 3. Run the `frontend.reload_themes` action, or restart Home Assistant.
+4. HACS installs only the theme file. For SF in the sidebar, charts and code editor, also install the font bridge (steps 3 and 4 of Option B).
 
 ### Option B: manual
 
@@ -49,7 +50,14 @@ A dark, gold-accented Home Assistant theme set in Apple's SF font family, rebuil
    frontend:
      themes: !include_dir_merge_named themes
    ```
-3. Go to **Developer Tools → Actions** and run `frontend.reload_themes`.
+3. Copy `www/iconic-fonts.js` to `/config/www/iconic-theme/iconic-fonts.js` and load it on every page:
+   ```yaml
+   frontend:
+     themes: !include_dir_merge_named themes
+     extra_module_url:
+       - /local/iconic-theme/iconic-fonts.js
+   ```
+4. Restart Home Assistant Core. `extra_module_url` is only read at startup; later theme edits only need `frontend.reload_themes`.
 
 ### Option C: scripted over SSH
 
@@ -59,7 +67,7 @@ With the *Terminal & SSH* add-on running, a network port set and your key author
 HA_HOST=root@homeassistant.local ./scripts/deploy.sh
 ```
 
-This runs the contrast check, backs up the current theme on the host, copies the new one, validates the config, reloads themes and confirms that Home Assistant loaded the theme in dark mode.
+This runs the contrast check, backs up the current theme on the host, copies the theme and the font bridge, validates the config, reloads themes and confirms that Home Assistant loaded the theme in dark mode. It warns if `configuration.yaml` doesn't load the font bridge yet. Add the `extra_module_url` entry from Option B and restart Core once.
 
 ### Activate
 
@@ -83,6 +91,15 @@ Apple's licence does not allow SF fonts to be self-hosted on the web, so the the
 | Windows | Segoe UI / Consolas |
 | Linux | `system-ui` default |
 
+### Where the font is set
+
+| Source | What it covers | How |
+|---|---|---|
+| Theme variables | Almost everything: `ha-font-family-*`, `wa-font-family-*`, `mdc-typography-font-family`, `md-ref-typeface-*`, legacy `paper-font-*` | `themes/iconic_theme.yaml` |
+| Font bridge | Places Home Assistant hardcodes Roboto: base page font (sidebar), ECharts canvas labels, code editor text and search/autocomplete, input chips | `www/iconic-fonts.js` |
+
+The bridge doesn't hardcode SF. It points those places at the active theme's `--ha-font-family-body` and `--ha-font-family-code`, so other themes keep their own fonts.
+
 If you need an identical look everywhere, self-host [Inter](https://rsms.me/inter/) (free, open licence, designed to closely resemble SF) and add `Inter` after `system-ui` in the four `ha-font-family-*` variables.
 
 ## Accessibility
@@ -99,6 +116,7 @@ It reads the colours straight from the theme file and exits non-zero on any fail
 
 ```
 themes/iconic_theme.yaml    The theme
+www/iconic-fonts.js         Font bridge for the spots HA hardcodes Roboto (extra_module_url)
 scripts/contrast_check.py   WCAG contrast gate (local, no dependencies)
 scripts/deploy.sh           SSH deploy: check, back up, copy, reload, verify
 scripts/verify_theme.py     Runs on the HA host; confirms the theme loaded in dark mode
